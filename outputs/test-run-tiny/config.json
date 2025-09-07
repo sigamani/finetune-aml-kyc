@@ -1,0 +1,22 @@
+{
+  "model_id": "unsloth/tinyllama-chat",
+  "data_dir": "./tests/data",
+  "train_file": "train.jsonl",
+  "val_file": "val.jsonl",
+  "output_dir": "./outputs/test-run-tiny",
+  "max_seq_len": 512,
+  "batch_size": 1,
+  "grad_accum": 1,
+  "epochs_easy": 1,
+  "epochs_medium": 1,
+  "epochs_hard": 1,
+  "lr": 2e-05,
+  "use_cot": true,
+  "merge_lora": false,
+  "push_to_hub": false,
+  "hub_repo": "",
+  "judge_provider": "anthropic",
+  "run_judge": false,
+  "seed": 42,
+  "rope_scale": 1.0
+}
