@@ -45,3 +45,226 @@
 2025-09-08 07:46:40,309 - aml_kyc_trainer - INFO - Integration example: ./outputs/aml-model/integration_snippet.py
 2025-09-08 07:46:40,309 - aml_kyc_trainer - INFO - Training log saved to training.log
 2025-09-08 07:46:40,309 - aml_kyc_trainer - INFO - === AML/KYC Enhanced Training Finished ===
+2025-09-08 20:33:45,891 - aml_kyc_trainer - INFO - === AML/KYC Enhanced Training Started ===
+2025-09-08 20:33:45,891 - aml_kyc_trainer - INFO - Training started at: 2025-09-08 20:33:45.891431
+2025-09-08 20:33:45,891 - aml_kyc_trainer - INFO - === Training Configuration ===
+2025-09-08 20:33:45,891 - aml_kyc_trainer - INFO -   model_id: unsloth/tinyllama-chat
+2025-09-08 20:33:45,891 - aml_kyc_trainer - INFO -   data_dir: ./data
+2025-09-08 20:33:45,891 - aml_kyc_trainer - INFO -   output_dir: ./outputs/aml-model
+2025-09-08 20:33:45,891 - aml_kyc_trainer - INFO -   max_seq_len: 1024
+2025-09-08 20:33:45,891 - aml_kyc_trainer - INFO -   epochs_easy: 2
+2025-09-08 20:33:45,891 - aml_kyc_trainer - INFO -   epochs_medium: 2
+2025-09-08 20:33:45,891 - aml_kyc_trainer - INFO -   epochs_hard: 1
+2025-09-08 20:33:45,891 - aml_kyc_trainer - INFO -   lr: 2e-05
+2025-09-08 20:33:45,891 - aml_kyc_trainer - INFO -   batch_size: 1
+2025-09-08 20:33:45,891 - aml_kyc_trainer - INFO -   grad_accum: 2
+2025-09-08 20:33:45,891 - aml_kyc_trainer - INFO -   use_cot: True
+2025-09-08 20:33:45,891 - aml_kyc_trainer - INFO -   judge_provider: anthropic
+2025-09-08 20:33:45,891 - aml_kyc_trainer - INFO -   run_judge: False
+2025-09-08 20:33:45,891 - aml_kyc_trainer - INFO -   seed: 42
+2025-09-08 20:33:45,892 - aml_kyc_trainer - INFO - Loading base model: unsloth/tinyllama-chat
+2025-09-08 20:33:50,942 - aml_kyc_trainer - INFO - Model loaded successfully in 5.05s
+2025-09-08 20:33:50,942 - aml_kyc_trainer - INFO - Applying LoRA configuration
+2025-09-08 20:33:53,192 - aml_kyc_trainer - INFO - LoRA applied successfully
+2025-09-08 20:33:53,192 - aml_kyc_trainer - INFO - 
+============================================================
+2025-09-08 20:33:53,192 - aml_kyc_trainer - INFO - Starting phase: EASY
+2025-09-08 20:33:53,192 - aml_kyc_trainer - INFO - ============================================================
+2025-09-08 20:33:53,192 - aml_kyc_trainer - INFO - Building dataset for easy phase from ./data/train.jsonl
+2025-09-08 20:33:53,630 - aml_kyc_trainer - INFO - === Starting easy phase training ===
+2025-09-08 20:33:53,631 - aml_kyc_trainer - INFO - Training samples: 4, Validation samples: 1
+2025-09-08 20:33:54,349 - aml_kyc_trainer - INFO - === Epoch 1/2 (easy) ===
+2025-09-08 20:40:31,727 - aml_kyc_trainer - INFO - === AML/KYC Enhanced Training Started ===
+2025-09-08 20:40:31,728 - aml_kyc_trainer - INFO - Training started at: 2025-09-08 20:40:31.728313
+2025-09-08 20:40:31,728 - aml_kyc_trainer - INFO - === Training Configuration ===
+2025-09-08 20:40:31,728 - aml_kyc_trainer - INFO -   model_id: unsloth/tinyllama-chat
+2025-09-08 20:40:31,728 - aml_kyc_trainer - INFO -   data_dir: ./data
+2025-09-08 20:40:31,728 - aml_kyc_trainer - INFO -   output_dir: ./outputs/aml-model
+2025-09-08 20:40:31,728 - aml_kyc_trainer - INFO -   max_seq_len: 1024
+2025-09-08 20:40:31,728 - aml_kyc_trainer - INFO -   epochs_easy: 2
+2025-09-08 20:40:31,728 - aml_kyc_trainer - INFO -   epochs_medium: 2
+2025-09-08 20:40:31,728 - aml_kyc_trainer - INFO -   epochs_hard: 1
+2025-09-08 20:40:31,728 - aml_kyc_trainer - INFO -   lr: 2e-05
+2025-09-08 20:40:31,728 - aml_kyc_trainer - INFO -   batch_size: 1
+2025-09-08 20:40:31,728 - aml_kyc_trainer - INFO -   grad_accum: 2
+2025-09-08 20:40:31,728 - aml_kyc_trainer - INFO -   use_cot: True
+2025-09-08 20:40:31,728 - aml_kyc_trainer - INFO -   judge_provider: anthropic
+2025-09-08 20:40:31,728 - aml_kyc_trainer - INFO -   run_judge: False
+2025-09-08 20:40:31,728 - aml_kyc_trainer - INFO -   seed: 42
+2025-09-08 20:40:31,729 - aml_kyc_trainer - INFO - Loading base model: unsloth/tinyllama-chat
+2025-09-08 20:40:36,294 - aml_kyc_trainer - INFO - Model loaded successfully in 4.56s
+2025-09-08 20:40:36,294 - aml_kyc_trainer - INFO - Applying LoRA configuration
+2025-09-08 20:40:39,086 - aml_kyc_trainer - INFO - LoRA applied successfully
+2025-09-08 20:40:39,086 - aml_kyc_trainer - INFO - 
+============================================================
+2025-09-08 20:40:39,086 - aml_kyc_trainer - INFO - Starting phase: EASY
+2025-09-08 20:40:39,086 - aml_kyc_trainer - INFO - ============================================================
+2025-09-08 20:40:39,086 - aml_kyc_trainer - INFO - Building dataset for easy phase from ./data/train.jsonl
+2025-09-08 20:40:39,510 - aml_kyc_trainer - INFO - === Starting easy phase training ===
+2025-09-08 20:40:39,510 - aml_kyc_trainer - INFO - Training samples: 4, Validation samples: 1
+2025-09-08 20:40:39,740 - aml_kyc_trainer - INFO - === Epoch 1/2 (easy) ===
+2025-09-08 20:41:11,856 - aml_kyc_trainer - INFO - === AML/KYC Enhanced Training Started ===
+2025-09-08 20:41:11,856 - aml_kyc_trainer - INFO - Training started at: 2025-09-08 20:41:11.856829
+2025-09-08 20:41:11,856 - aml_kyc_trainer - INFO - === Training Configuration ===
+2025-09-08 20:41:11,856 - aml_kyc_trainer - INFO -   model_id: unsloth/tinyllama-chat
+2025-09-08 20:41:11,856 - aml_kyc_trainer - INFO -   data_dir: ./data
+2025-09-08 20:41:11,857 - aml_kyc_trainer - INFO -   output_dir: ./outputs/aml-model
+2025-09-08 20:41:11,857 - aml_kyc_trainer - INFO -   max_seq_len: 1024
+2025-09-08 20:41:11,857 - aml_kyc_trainer - INFO -   epochs_easy: 2
+2025-09-08 20:41:11,857 - aml_kyc_trainer - INFO -   epochs_medium: 2
+2025-09-08 20:41:11,857 - aml_kyc_trainer - INFO -   epochs_hard: 1
+2025-09-08 20:41:11,857 - aml_kyc_trainer - INFO -   lr: 2e-05
+2025-09-08 20:41:11,857 - aml_kyc_trainer - INFO -   batch_size: 1
+2025-09-08 20:41:11,857 - aml_kyc_trainer - INFO -   grad_accum: 2
+2025-09-08 20:41:11,857 - aml_kyc_trainer - INFO -   use_cot: True
+2025-09-08 20:41:11,857 - aml_kyc_trainer - INFO -   judge_provider: anthropic
+2025-09-08 20:41:11,857 - aml_kyc_trainer - INFO -   run_judge: False
+2025-09-08 20:41:11,857 - aml_kyc_trainer - INFO -   seed: 42
+2025-09-08 20:41:11,858 - aml_kyc_trainer - INFO - Loading base model: unsloth/tinyllama-chat
+2025-09-08 20:41:16,683 - aml_kyc_trainer - INFO - Model loaded successfully in 4.82s
+2025-09-08 20:41:16,683 - aml_kyc_trainer - INFO - Applying LoRA configuration
+2025-09-08 20:41:21,380 - aml_kyc_trainer - INFO - LoRA applied successfully
+2025-09-08 20:41:21,380 - aml_kyc_trainer - INFO - 
+============================================================
+2025-09-08 20:41:21,380 - aml_kyc_trainer - INFO - Starting phase: EASY
+2025-09-08 20:41:21,380 - aml_kyc_trainer - INFO - ============================================================
+2025-09-08 20:41:21,380 - aml_kyc_trainer - INFO - Building dataset for easy phase from ./data/train.jsonl
+2025-09-08 20:41:21,809 - aml_kyc_trainer - INFO - === Starting easy phase training ===
+2025-09-08 20:41:21,809 - aml_kyc_trainer - INFO - Training samples: 4, Validation samples: 1
+2025-09-08 20:41:22,050 - aml_kyc_trainer - INFO - === Epoch 1/2 (easy) ===
+2025-09-08 20:42:24,673 - aml_kyc_trainer - INFO - === AML/KYC Enhanced Training Started ===
+2025-09-08 20:42:24,674 - aml_kyc_trainer - INFO - Training started at: 2025-09-08 20:42:24.673983
+2025-09-08 20:42:24,674 - aml_kyc_trainer - INFO - === Training Configuration ===
+2025-09-08 20:42:24,674 - aml_kyc_trainer - INFO -   model_id: unsloth/tinyllama-chat
+2025-09-08 20:42:24,674 - aml_kyc_trainer - INFO -   data_dir: ./data
+2025-09-08 20:42:24,674 - aml_kyc_trainer - INFO -   output_dir: ./outputs/aml-model
+2025-09-08 20:42:24,674 - aml_kyc_trainer - INFO -   max_seq_len: 1024
+2025-09-08 20:42:24,674 - aml_kyc_trainer - INFO -   epochs_easy: 2
+2025-09-08 20:42:24,674 - aml_kyc_trainer - INFO -   epochs_medium: 2
+2025-09-08 20:42:24,674 - aml_kyc_trainer - INFO -   epochs_hard: 1
+2025-09-08 20:42:24,674 - aml_kyc_trainer - INFO -   lr: 2e-05
+2025-09-08 20:42:24,674 - aml_kyc_trainer - INFO -   batch_size: 1
+2025-09-08 20:42:24,674 - aml_kyc_trainer - INFO -   grad_accum: 2
+2025-09-08 20:42:24,674 - aml_kyc_trainer - INFO -   use_cot: True
+2025-09-08 20:42:24,674 - aml_kyc_trainer - INFO -   judge_provider: anthropic
+2025-09-08 20:42:24,674 - aml_kyc_trainer - INFO -   run_judge: False
+2025-09-08 20:42:24,674 - aml_kyc_trainer - INFO -   seed: 42
+2025-09-08 20:42:24,675 - aml_kyc_trainer - INFO - Loading base model: unsloth/tinyllama-chat
+2025-09-08 20:42:29,648 - aml_kyc_trainer - INFO - Model loaded successfully in 4.97s
+2025-09-08 20:42:29,648 - aml_kyc_trainer - INFO - Applying LoRA configuration
+2025-09-08 20:42:31,932 - aml_kyc_trainer - INFO - LoRA applied successfully
+2025-09-08 20:42:31,932 - aml_kyc_trainer - INFO - 
+============================================================
+2025-09-08 20:42:31,932 - aml_kyc_trainer - INFO - Starting phase: EASY
+2025-09-08 20:42:31,932 - aml_kyc_trainer - INFO - ============================================================
+2025-09-08 20:42:31,932 - aml_kyc_trainer - INFO - Building dataset for easy phase from ./data/train.jsonl
+2025-09-08 20:42:32,357 - aml_kyc_trainer - INFO - === Starting easy phase training ===
+2025-09-08 20:42:32,357 - aml_kyc_trainer - INFO - Training samples: 4, Validation samples: 1
+2025-09-08 20:42:32,581 - aml_kyc_trainer - INFO - === Epoch 1/2 (easy) ===
+2025-09-08 20:43:04,187 - aml_kyc_trainer - INFO - === AML/KYC Enhanced Training Started ===
+2025-09-08 20:43:04,187 - aml_kyc_trainer - INFO - Training started at: 2025-09-08 20:43:04.187146
+2025-09-08 20:43:04,187 - aml_kyc_trainer - INFO - === Training Configuration ===
+2025-09-08 20:43:04,187 - aml_kyc_trainer - INFO -   model_id: microsoft/DialoGPT-small
+2025-09-08 20:43:04,187 - aml_kyc_trainer - INFO -   data_dir: ./data
+2025-09-08 20:43:04,187 - aml_kyc_trainer - INFO -   output_dir: ./outputs/aml-model
+2025-09-08 20:43:04,187 - aml_kyc_trainer - INFO -   max_seq_len: 1024
+2025-09-08 20:43:04,187 - aml_kyc_trainer - INFO -   epochs_easy: 2
+2025-09-08 20:43:04,187 - aml_kyc_trainer - INFO -   epochs_medium: 2
+2025-09-08 20:43:04,187 - aml_kyc_trainer - INFO -   epochs_hard: 1
+2025-09-08 20:43:04,187 - aml_kyc_trainer - INFO -   lr: 2e-05
+2025-09-08 20:43:04,187 - aml_kyc_trainer - INFO -   batch_size: 1
+2025-09-08 20:43:04,187 - aml_kyc_trainer - INFO -   grad_accum: 2
+2025-09-08 20:43:04,187 - aml_kyc_trainer - INFO -   use_cot: True
+2025-09-08 20:43:04,187 - aml_kyc_trainer - INFO -   judge_provider: anthropic
+2025-09-08 20:43:04,187 - aml_kyc_trainer - INFO -   run_judge: False
+2025-09-08 20:43:04,187 - aml_kyc_trainer - INFO -   seed: 42
+2025-09-08 20:43:04,188 - aml_kyc_trainer - INFO - Loading base model: microsoft/DialoGPT-small
+2025-09-08 20:43:06,629 - aml_kyc_trainer - ERROR - Failed to load model microsoft/DialoGPT-small: Direct module loading failed for unsloth_compiled_module_gpt2: unexpected indent (unsloth_compiled_module_gpt2.py, line 726)
+2025-09-08 20:43:06,629 - aml_kyc_trainer - INFO - Falling back to CPU training...
+2025-09-08 20:43:15,942 - aml_kyc_trainer - INFO - Model loaded in CPU mode in 11.75s
+2025-09-08 20:43:15,942 - aml_kyc_trainer - INFO - Applying LoRA configuration
+2025-09-08 20:43:40,428 - aml_kyc_trainer - INFO - === AML/KYC Enhanced Training Started ===
+2025-09-08 20:43:40,428 - aml_kyc_trainer - INFO - Training started at: 2025-09-08 20:43:40.428752
+2025-09-08 20:43:40,428 - aml_kyc_trainer - INFO - === Training Configuration ===
+2025-09-08 20:43:40,428 - aml_kyc_trainer - INFO -   model_id: unsloth/tinyllama-chat
+2025-09-08 20:43:40,428 - aml_kyc_trainer - INFO -   data_dir: ./data
+2025-09-08 20:43:40,428 - aml_kyc_trainer - INFO -   output_dir: ./outputs/aml-model
+2025-09-08 20:43:40,428 - aml_kyc_trainer - INFO -   max_seq_len: 1024
+2025-09-08 20:43:40,428 - aml_kyc_trainer - INFO -   epochs_easy: 2
+2025-09-08 20:43:40,429 - aml_kyc_trainer - INFO -   epochs_medium: 2
+2025-09-08 20:43:40,429 - aml_kyc_trainer - INFO -   epochs_hard: 1
+2025-09-08 20:43:40,429 - aml_kyc_trainer - INFO -   lr: 2e-05
+2025-09-08 20:43:40,429 - aml_kyc_trainer - INFO -   batch_size: 1
+2025-09-08 20:43:40,429 - aml_kyc_trainer - INFO -   grad_accum: 2
+2025-09-08 20:43:40,429 - aml_kyc_trainer - INFO -   use_cot: True
+2025-09-08 20:43:40,429 - aml_kyc_trainer - INFO -   judge_provider: anthropic
+2025-09-08 20:43:40,429 - aml_kyc_trainer - INFO -   run_judge: False
+2025-09-08 20:43:40,429 - aml_kyc_trainer - INFO -   seed: 42
+2025-09-08 20:43:40,429 - aml_kyc_trainer - INFO - Loading base model: unsloth/tinyllama-chat
+2025-09-08 20:43:46,105 - aml_kyc_trainer - INFO - Model loaded successfully in 5.68s
+2025-09-08 20:43:46,106 - aml_kyc_trainer - INFO - Applying LoRA configuration
+2025-09-08 20:43:48,552 - aml_kyc_trainer - INFO - LoRA applied successfully
+2025-09-08 20:43:48,552 - aml_kyc_trainer - INFO - 
+============================================================
+2025-09-08 20:43:48,552 - aml_kyc_trainer - INFO - Starting phase: EASY
+2025-09-08 20:43:48,552 - aml_kyc_trainer - INFO - ============================================================
+2025-09-08 20:43:48,552 - aml_kyc_trainer - INFO - Building dataset for easy phase from ./data/train.jsonl
+2025-09-08 20:43:48,965 - aml_kyc_trainer - INFO - === Starting easy phase training ===
+2025-09-08 20:43:48,965 - aml_kyc_trainer - INFO - Training samples: 4, Validation samples: 1
+2025-09-08 20:43:48,988 - aml_kyc_trainer - ERROR - Training failed for easy phase: Unsloth: Model is in float16 precision but you want to use bfloat16 precision. Set fp16 to `True` and bf16 to `False`
+2025-09-08 20:43:48,988 - aml_kyc_trainer - INFO - 
+============================================================
+2025-09-08 20:43:48,988 - aml_kyc_trainer - INFO - Starting phase: MEDIUM
+2025-09-08 20:43:48,988 - aml_kyc_trainer - INFO - ============================================================
+2025-09-08 20:43:48,988 - aml_kyc_trainer - INFO - Building dataset for medium phase from ./data/train.jsonl
+2025-09-08 20:43:49,131 - aml_kyc_trainer - INFO - === Starting medium phase training ===
+2025-09-08 20:43:49,131 - aml_kyc_trainer - INFO - Training samples: 4, Validation samples: 1
+2025-09-08 20:43:49,154 - aml_kyc_trainer - ERROR - Training failed for medium phase: Unsloth: Model is in float16 precision but you want to use bfloat16 precision. Set fp16 to `True` and bf16 to `False`
+2025-09-08 20:43:49,154 - aml_kyc_trainer - INFO - 
+============================================================
+2025-09-08 20:43:49,154 - aml_kyc_trainer - INFO - Starting phase: HARD
+2025-09-08 20:43:49,154 - aml_kyc_trainer - INFO - ============================================================
+2025-09-08 20:43:49,154 - aml_kyc_trainer - INFO - Building dataset for hard phase from ./data/train.jsonl
+2025-09-08 20:43:49,293 - aml_kyc_trainer - INFO - === Starting hard phase training ===
+2025-09-08 20:43:49,293 - aml_kyc_trainer - INFO - Training samples: 4, Validation samples: 1
+2025-09-08 20:43:49,316 - aml_kyc_trainer - ERROR - Training failed for hard phase: Unsloth: Model is in float16 precision but you want to use bfloat16 precision. Set fp16 to `True` and bf16 to `False`
+2025-09-08 20:43:49,316 - aml_kyc_trainer - INFO - Training summary saved to ./outputs/aml-model/training_summary.json
+2025-09-08 20:43:49,316 - aml_kyc_trainer - INFO - 
+============================================================
+2025-09-08 20:43:49,317 - aml_kyc_trainer - INFO - TRAINING COMPLETED
+2025-09-08 20:43:49,317 - aml_kyc_trainer - INFO - ============================================================
+2025-09-08 20:43:49,317 - aml_kyc_trainer - INFO - Total training time: 0.76s (0.0 minutes)
+2025-09-08 20:43:49,317 - aml_kyc_trainer - INFO - Phases completed: []
+2025-09-08 20:43:49,317 - aml_kyc_trainer - INFO - Training summary: ./outputs/aml-model/training_summary.json
+2025-09-08 20:43:49,317 - aml_kyc_trainer - INFO - Integration example: ./outputs/aml-model/integration_snippet.py
+2025-09-08 20:43:49,317 - aml_kyc_trainer - INFO - Training log saved to training.log
+2025-09-08 20:43:49,317 - aml_kyc_trainer - INFO - === AML/KYC Enhanced Training Finished ===
+2025-09-08 20:44:16,243 - aml_kyc_trainer - INFO - === AML/KYC Enhanced Training Started ===
+2025-09-08 20:44:16,243 - aml_kyc_trainer - INFO - Training started at: 2025-09-08 20:44:16.243165
+2025-09-08 20:44:16,243 - aml_kyc_trainer - INFO - === Training Configuration ===
+2025-09-08 20:44:16,243 - aml_kyc_trainer - INFO -   model_id: unsloth/tinyllama-chat
+2025-09-08 20:44:16,243 - aml_kyc_trainer - INFO -   data_dir: ./data
+2025-09-08 20:44:16,243 - aml_kyc_trainer - INFO -   output_dir: ./outputs/aml-model
+2025-09-08 20:44:16,243 - aml_kyc_trainer - INFO -   max_seq_len: 1024
+2025-09-08 20:44:16,243 - aml_kyc_trainer - INFO -   epochs_easy: 2
+2025-09-08 20:44:16,243 - aml_kyc_trainer - INFO -   epochs_medium: 2
+2025-09-08 20:44:16,243 - aml_kyc_trainer - INFO -   epochs_hard: 1
+2025-09-08 20:44:16,243 - aml_kyc_trainer - INFO -   lr: 2e-05
+2025-09-08 20:44:16,243 - aml_kyc_trainer - INFO -   batch_size: 1
+2025-09-08 20:44:16,243 - aml_kyc_trainer - INFO -   grad_accum: 2
+2025-09-08 20:44:16,243 - aml_kyc_trainer - INFO -   use_cot: True
+2025-09-08 20:44:16,243 - aml_kyc_trainer - INFO -   judge_provider: anthropic
+2025-09-08 20:44:16,243 - aml_kyc_trainer - INFO -   run_judge: False
+2025-09-08 20:44:16,243 - aml_kyc_trainer - INFO -   seed: 42
+2025-09-08 20:44:16,244 - aml_kyc_trainer - INFO - Loading base model: unsloth/tinyllama-chat
+2025-09-08 20:44:20,862 - aml_kyc_trainer - INFO - Model loaded successfully in 4.62s
+2025-09-08 20:44:20,862 - aml_kyc_trainer - INFO - Applying LoRA configuration
+2025-09-08 20:44:23,658 - aml_kyc_trainer - INFO - LoRA applied successfully
+2025-09-08 20:44:23,658 - aml_kyc_trainer - INFO - 
+============================================================
+2025-09-08 20:44:23,658 - aml_kyc_trainer - INFO - Starting phase: EASY
+2025-09-08 20:44:23,658 - aml_kyc_trainer - INFO - ============================================================
+2025-09-08 20:44:23,658 - aml_kyc_trainer - INFO - Building dataset for easy phase from ./data/train.jsonl
+2025-09-08 20:44:24,068 - aml_kyc_trainer - INFO - === Starting easy phase training ===
+2025-09-08 20:44:24,069 - aml_kyc_trainer - INFO - Training samples: 4, Validation samples: 1
+2025-09-08 20:44:24,779 - aml_kyc_trainer - INFO - === Epoch 1/2 (easy) ===

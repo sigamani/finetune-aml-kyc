@@ -29,9 +29,3 @@ def analyze_aml_case(instruction: str, case_input: str) -> str:
     response = tokenizer.decode(outputs[0], skip_special_tokens=True)
     return response.split("### Assistant:\n")[-1].strip()
 
-# Example usage
-# result = analyze_aml_case(
-#     "Determine if this entity matches the watchlist entry.",
-#     "Candidate: John Smith, DOB: 1980-05-15, UK citizen..."
-# )
-# print(result)

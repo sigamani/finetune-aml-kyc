@@ -3,7 +3,25 @@
 Enhanced AML/KYC curriculum trainer with logging and eval integration.
 """
 from __future__ import annotations
-import os, json, math, random, subprocess, shutil, logging, datetime, time
+import os
+os.environ["NCCL_P2P_DISABLE"] = "1"
+os.environ["NCCL_IB_DISABLE"] = "1" 
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["USE_FLASH_ATTENTION"] = "0"
+os.environ["DISABLE_FLASH_ATTENTION"] = "1"
+os.environ["TORCH_CUDA_ARCH_LIST"] = "8.6"
+os.environ["XFORMERS_FORCE_DISABLE_TRITON"] = "1"
+os.environ["UNSLOTH_DISABLE_FLASH_ATTENTION"] = "1"
+os.environ["TORCH_DISABLE_FLASH_ATTENTION"] = "1"
+
+import unsloth
+# Disable flash attention at import level
+try:
+    unsloth.disable_fast_attention = True
+except:
+    pass
+import json, math, random, subprocess, shutil, logging, datetime, time
 from dataclasses import dataclass
 from typing import Dict, Any, List
 from dotenv import load_dotenv
@@ -43,7 +61,7 @@ def setup_logging(output_dir: str):
     logger.addHandler(console_handler)
     return logger
 
-DEFAULT_MODEL = "unsloth/tinyllama-chat"
+DEFAULT_MODEL = "unsloth/llama-3-8b-bnb-4bit"
 TARGET_MODULES = ["q_proj","k_proj","v_proj","o_proj","gate_proj","up_proj","down_proj"]
 
 SYSTEM_PROMPT = (
@@ -98,10 +116,6 @@ def train_phase(
     logger.info(f"Training samples: {len(ds_phase['train'])}, Validation samples: {len(ds_phase['validation'])}")
     
     os.makedirs(output_dir, exist_ok=True)
-    collator = DataCollatorForLanguageModeling(
-        tokenizer=tokenizer,
-        mlm=False,
-    )
 
     steps_per_epoch = max(1, len(ds_phase["train"]) // max(1, args.batch_size))
     training_args = TrainingArguments(
@@ -111,8 +125,9 @@ def train_phase(
         gradient_accumulation_steps=args.grad_accum,
         num_train_epochs=getattr(args, f"epochs_{phase_name}"),
         learning_rate=args.lr if phase_name == "easy" else (args.lr * 0.7 if phase_name == "medium" else args.lr * 0.5),
-        bf16=torch.cuda.is_available(),
-        gradient_checkpointing=True,
+        fp16=True,
+        bf16=False,
+        gradient_checkpointing=False,
         lr_scheduler_type="cosine",
         warmup_ratio=0.03,
         logging_steps=max(1, steps_per_epoch // 5),
@@ -128,10 +143,12 @@ def train_phase(
 
     trainer = SFTTrainer(
         model=model,
+        tokenizer=tokenizer,
         train_dataset=ds_phase["train"],
         eval_dataset=ds_phase["validation"],
-        data_collator=collator,
         args=training_args,
+        max_seq_length=args.max_seq_len,
+        dataset_text_field="text",
     )
 
     stopper = PlateauEarlyStop(patience_epochs=3, min_rel_improve=0.05)
@@ -251,8 +268,9 @@ def main():
         model, tokenizer = FastLanguageModel.from_pretrained(
             model_name=args.model_id,
             max_seq_length=args.max_seq_len,
-            load_in_4bit=True,
-            dtype=None,
+            load_in_4bit=False,
+            dtype=torch.float16,
+            attn_implementation="sdpa",
         )
         
         model_load_time = time.time() - model_start_time
@@ -266,12 +284,17 @@ def main():
             max_seq_length=args.max_seq_len,
             load_in_4bit=False,
             dtype=None,
+            attn_implementation="sdpa",
         )
         model_load_time = time.time() - model_start_time
         logger.info(f"Model loaded in CPU mode in {model_load_time:.2f}s")
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     tokenizer.truncation_side = "left"
+    
+    # Ensure tokenizer is properly configured for SFTTrainer
+    if hasattr(tokenizer, 'model_max_length') and tokenizer.model_max_length > args.max_seq_len:
+        tokenizer.model_max_length = args.max_seq_len
 
     logger.info("Applying LoRA configuration")
     model = FastLanguageModel.get_peft_model(
