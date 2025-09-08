@@ -1,15 +1,7 @@
 #!/usr/bin/env python3
 """
-Make a tiny, deterministic AML/KYC curriculum dataset (50 items total) for smoke tests.
-No external API calls. Schema matches the training code:
-{"instruction","input","output","cot","difficulty","label"}
-
-Writes to:
-  tests/data/easy.jsonl
-  tests/data/medium.jsonl
-  tests/data/hard.jsonl
-  tests/data/train.jsonl
-  tests/data/val.jsonl   (balanced ~30% of train, capped at 100)
+Generates deterministic AML/KYC test dataset (50 items).
+Outputs: train/val/easy/medium/hard.jsonl files in data/
 """
 
 from __future__ import annotations
@@ -19,10 +11,9 @@ from dataclasses import dataclass
 
 random.seed(1234)
 
-OUT_DIR = os.path.join("tests", "data")
+OUT_DIR = "data"
 os.makedirs(OUT_DIR, exist_ok=True)
 
-# Simple name/locale pools for variation
 PERSON_FIRST = {
     "latin": ["Juan", "Maria", "David", "Elena", "Marco", "Sofia"],
     "cyrillic": ["Ivan", "Olga", "Dmitri", "Nadia", "Alexei", "Irina"],
@@ -59,7 +50,6 @@ def mk_org(locale: str) -> str:
     return f"{stem} {tail} {suffix}"
 
 def dob_str(year: int) -> str:
-    # Basic YYYY-MM banded
     return f"{year:04d}-??-??"
 
 def mk_case(idx: int, difficulty: str, label: str) -> Dict:
@@ -69,7 +59,6 @@ def mk_case(idx: int, difficulty: str, label: str) -> Dict:
         fn, ln = mk_person(locale)
         cand_name = f"{fn} {ln}"
         watch_name = cand_name if label == "match" else f"{fn} {ln}{random.choice(['', 'a', 'ov', '-Lee'])}"
-        # DOB bands — clearer for easy, fuzzier for hard
         base_year = random.choice(range(1965, 1998))
         cand_dob = dob_str(base_year + (0 if difficulty == "easy" else random.choice([-1, 0, +1])))
         watch_dob = dob_str(base_year)
@@ -82,13 +71,11 @@ def mk_case(idx: int, difficulty: str, label: str) -> Dict:
             f"Watchlist: {watch_name}, DOB≈{watch_dob}, Country: {country_watch}. {translit_note}. "
             f"Aliases: {watch_name if difficulty!='hard' else watch_name.replace(' ', '')}."
         )
-        # CoT short & explicit
         cot = (
             f"Compare name and DOB bands. Name similarity high. DOB close. "
             f"Countries {'match' if country_cand==country_watch else 'differ'}. "
             f"ID format plausible."
         )
-        # Decision logic
         if label == "match":
             output = "MATCH — name + DOB band align; country acceptable; aliases consistent."
         elif label == "no_match":
@@ -96,7 +83,6 @@ def mk_case(idx: int, difficulty: str, label: str) -> Dict:
         else:
             output = "EDGE — conflicting country or partial DOB; insufficient certainty."
     else:
-        # Organization-style case
         org_c = mk_org(locale)
         org_w = org_c if label == "match" else mk_org(locale)
         lei = f"LEI-{random.randint(100000,999999)}"
@@ -120,7 +106,6 @@ def mk_case(idx: int, difficulty: str, label: str) -> Dict:
         else:
             output = "EDGE — possible parent/subsidiary relation; identity uncertain."
 
-    # Make difficulty-specific tiny perturbations
     if difficulty == "medium":
         input_txt += " Minor noise: alternate spelling present."
     elif difficulty == "hard":
@@ -142,7 +127,6 @@ def write_jsonl(path: str, rows: List[Dict]):
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
 def main():
-    # Plan: 50 total -> easy:20, medium:18, hard:12
     plan = [
         ("easy", 20),
         ("medium", 18),
@@ -156,10 +140,8 @@ def main():
     for tier, n in plan:
         for _ in range(n):
             idx += 1
-            # rotate labels to keep balance-ish
             label = labels[idx % 3]
             rec = mk_case(idx, tier, label)
-            # Ensure minimum lengths (schema expectations)
             assert len(rec["instruction"]) >= 5
             assert len(rec["input"]) >= 10
             assert len(rec["cot"]) >= 5
@@ -167,20 +149,16 @@ def main():
             per_tier[tier].append(rec)
             all_rows.append(rec)
 
-    # Write per-tier
     for tier, rows in per_tier.items():
         write_jsonl(os.path.join(OUT_DIR, f"{tier}.jsonl"), rows)
 
-    # Train = all 50
     write_jsonl(os.path.join(OUT_DIR, "train.jsonl"), all_rows)
 
-    # Val: ~30% balanced by (difficulty,label) buckets, capped at 100
     buckets = {}
     for r in all_rows:
         buckets.setdefault((r["difficulty"], r["label"]), []).append(r)
     val = []
     target = min(100, max(1, int(round(0.3 * len(all_rows)))))
-    # simple round-robin across buckets
     keys = list(buckets.keys())
     i = 0
     while len(val) < target:

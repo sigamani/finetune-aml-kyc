@@ -1,0 +1,25 @@
+{
+  "training_config": {
+    "model_id": "unsloth/tinyllama-chat",
+    "data_dir": "./data",
+    "output_dir": "./outputs/aml-model",
+    "max_seq_len": 1024,
+    "epochs_easy": 2,
+    "epochs_medium": 2,
+    "epochs_hard": 1,
+    "lr": 2e-05,
+    "batch_size": 2,
+    "grad_accum": 4,
+    "use_cot": true,
+    "judge_provider": "anthropic",
+    "run_judge": true,
+    "seed": 42
+  },
+  "model_load_time": 12.563133955001831,
+  "total_training_time": 0.0005557537078857422,
+  "phases_completed": [],
+  "phase_metrics": {},
+  "final_model_path": "./outputs/aml-model/phase_hard",
+  "training_completed_at": "2025-09-08T07:46:40.308292",
+  "training_successful": false
+}

@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 """
-Enhanced AML/KYC curriculum learning trainer with comprehensive logging and eval_judge integration.
-- Improved logging to files and console
-- Better error handling and progress tracking
-- Automatic eval_judge.py integration after each phase
-- Comprehensive training reports and metrics
+Enhanced AML/KYC curriculum trainer with logging and eval integration.
 """
 from __future__ import annotations
 import os, json, math, random, subprocess, shutil, logging, datetime, time
@@ -26,40 +22,28 @@ from tqdm import tqdm
 
 load_dotenv()
 
-# Setup enhanced logging
 def setup_logging(output_dir: str):
-    """Setup logging to both file and console with timestamps"""
     os.makedirs(output_dir, exist_ok=True)
-    
-    # Create formatters
     file_formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
     console_formatter = logging.Formatter(
         '%(asctime)s - %(levelname)s - %(message)s'
     )
-    
-    # Setup file handler
     file_handler = logging.FileHandler(os.path.join(output_dir, 'training.log'))
     file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(file_formatter)
-    
-    # Setup console handler
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(console_formatter)
-    
-    # Setup logger
     logger = logging.getLogger('aml_kyc_trainer')
     logger.setLevel(logging.INFO)
-    logger.handlers.clear()  # Clear any existing handlers
+    logger.handlers.clear()
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
-    
     return logger
 
-# ----------------- Config -----------------
-DEFAULT_MODEL = "unsloth/tinyllama-chat"  # Use more compatible model by default
+DEFAULT_MODEL = "unsloth/tinyllama-chat"
 TARGET_MODULES = ["q_proj","k_proj","v_proj","o_proj","gate_proj","up_proj","down_proj"]
 
 SYSTEM_PROMPT = (
@@ -99,9 +83,7 @@ def format_example(ex: Dict[str, Any], use_cot: bool) -> str:
 
 def build_packed_dataset(data_path: str, split_filter: str, use_cot: bool, seed: int = 42) -> DatasetDict:
     ds = load_dataset("json", data_files=data_path)["train"]
-    # Split by difficulty for curriculum
     ds_phase = ds.filter(lambda ex: ex.get("difficulty","").lower() == split_filter.lower())
-    # Train/val split
     ds_phase = ds_phase.train_test_split(test_size=min(0.2, max(0.1, 0.2)), seed=seed)
     def map_fmt(ex):
         ex["text"] = format_example(ex, use_cot=use_cot)
@@ -116,8 +98,6 @@ def train_phase(
     logger.info(f"Training samples: {len(ds_phase['train'])}, Validation samples: {len(ds_phase['validation'])}")
     
     os.makedirs(output_dir, exist_ok=True)
-    
-    # Data collator for language modeling
     collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer,
         mlm=False,
@@ -180,16 +160,13 @@ def train_phase(
             "eval_metrics": eval_metrics
         })
         
-        # Save intermediate state
         state_path = os.path.join(output_dir, "trainer_state.json")
         with open(state_path, "w") as f:
             json.dump({"history": history, "last_eval": eval_metrics}, f, indent=2)
-            
         if stopper.on_epoch_end(eval_loss):
             logger.info(f"Early stopping triggered at epoch {epoch + 1}")
             break
 
-    # Save final model
     logger.info(f"Saving final model to {output_dir}")
     trainer.save_model(output_dir)
     
@@ -210,7 +187,6 @@ def train_phase(
     return phase_metrics
 
 def run_eval_judge(model_path: str, dataset_path: str, provider: str, output_path: str, logger) -> Dict[str, Any]:
-    """Run LLM-as-Judge evaluation on trained model"""
     try:
         logger.info(f"Running eval_judge on {model_path} with {provider}")
         cmd = [
@@ -222,13 +198,11 @@ def run_eval_judge(model_path: str, dataset_path: str, provider: str, output_pat
             "--out", output_path
         ]
         
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)  # 30min timeout
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
         
         if result.returncode == 0:
             logger.info(f"Eval judge completed successfully, results saved to {output_path}")
-            logger.info(f"Eval judge stdout: {result.stdout[-500:]}")  # Last 500 chars
-            
-            # Try to load and return metrics
+            logger.info(f"Eval judge stdout: {result.stdout[-500:]}")
             if os.path.exists(output_path):
                 with open(output_path, 'r') as f:
                     return json.load(f)
@@ -243,7 +217,6 @@ def run_eval_judge(model_path: str, dataset_path: str, provider: str, output_pat
     return {}
 
 def main():
-    # ---------------- Parse args ----------------
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_id", default=DEFAULT_MODEL)
@@ -261,11 +234,7 @@ def main():
     parser.add_argument("--run_judge", type=lambda x: x.lower() == "true", default=False)
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
-    
-    # Setup logging
     logger = setup_logging(args.output_dir)
-    
-    # Log training configuration
     logger.info("=== AML/KYC Enhanced Training Started ===")
     logger.info(f"Training started at: {datetime.datetime.now()}")
     logger.info("=== Training Configuration ===")
@@ -275,7 +244,6 @@ def main():
     random.seed(args.seed)
     torch.manual_seed(args.seed)
 
-    # ---------------- Load model via Unsloth ----------------
     logger.info(f"Loading base model: {args.model_id}")
     model_start_time = time.time()
     
@@ -293,7 +261,6 @@ def main():
     except Exception as e:
         logger.error(f"Failed to load model {args.model_id}: {e}")
         logger.info("Falling back to CPU training...")
-        # Fallback for CPU training
         model, tokenizer = FastLanguageModel.from_pretrained(
             model_name=args.model_id,
             max_seq_length=args.max_seq_len,
@@ -302,13 +269,10 @@ def main():
         )
         model_load_time = time.time() - model_start_time
         logger.info(f"Model loaded in CPU mode in {model_load_time:.2f}s")
-    
-    # Special tokens
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     tokenizer.truncation_side = "left"
 
-    # Apply LoRA
     logger.info("Applying LoRA configuration")
     model = FastLanguageModel.get_peft_model(
         model,
@@ -318,10 +282,8 @@ def main():
         use_gradient_checkpointing="unsloth",
         random_state=args.seed,
     )
-    
     logger.info("LoRA applied successfully")
 
-    # ---------------- Curriculum Training ----------------
     phases = ["easy", "medium", "hard"]
     all_metrics = {}
     total_training_start = time.time()
@@ -337,7 +299,6 @@ def main():
         if not os.path.exists(full_train_path):
             logger.error(f"Training data not found at {full_train_path}")
             continue
-            
         logger.info(f"Building dataset for {phase} phase from {full_train_path}")
         try:
             ds_phase = build_packed_dataset(full_train_path, split_filter=phase, use_cot=args.use_cot, seed=args.seed)
@@ -356,7 +317,6 @@ def main():
             logger.error(f"Training failed for {phase} phase: {e}")
             continue
 
-        # Optional judge eval per phase
         if args.run_judge:
             logger.info(f"Running LLM-as-Judge evaluation for {phase} phase")
             val_path = os.path.join(args.data_dir, "val.jsonl")
@@ -375,7 +335,6 @@ def main():
 
     total_training_time = time.time() - total_training_start
     
-    # ---------------- Save comprehensive summary ----------------
     summary_path = os.path.join(args.output_dir, "training_summary.json")
     training_summary = {
         "training_config": vars(args),
@@ -387,13 +346,9 @@ def main():
         "training_completed_at": datetime.datetime.now().isoformat(),
         "training_successful": len(all_metrics) > 0
     }
-    
     with open(summary_path, "w") as f:
         json.dump(training_summary, f, indent=2)
-    
     logger.info(f"Training summary saved to {summary_path}")
-    
-    # Save integration snippet
     integration_path = os.path.join(args.output_dir, "integration_snippet.py")
     snippet = f'''# Load fine-tuned AML/KYC model
 from peft import AutoPeftModelForCausalLM
@@ -426,17 +381,10 @@ def analyze_aml_case(instruction: str, case_input: str) -> str:
     response = tokenizer.decode(outputs[0], skip_special_tokens=True)
     return response.split("### Assistant:\\n")[-1].strip()
 
-# Example usage
-# result = analyze_aml_case(
-#     "Determine if this entity matches the watchlist entry.",
-#     "Candidate: John Smith, DOB: 1980-05-15, UK citizen..."
-# )
-# print(result)
 '''
     with open(integration_path, "w") as f:
         f.write(snippet)
 
-    # ---------------- Final logging ----------------
     logger.info(f"\n{'='*60}")
     logger.info("TRAINING COMPLETED")
     logger.info(f"{'='*60}")
@@ -444,17 +392,13 @@ def analyze_aml_case(instruction: str, case_input: str) -> str:
     logger.info(f"Phases completed: {list(all_metrics.keys())}")
     logger.info(f"Training summary: {summary_path}")
     logger.info(f"Integration example: {integration_path}")
-    
-    # Print final metrics summary
     for phase, metrics in all_metrics.items():
         best_loss = metrics.get('best_eval_loss', float('inf'))
         epochs = metrics.get('epochs_completed', 0)
         logger.info(f"Phase {phase}: Best Loss {best_loss:.4f}, Epochs {epochs}")
-        
         if 'judge_eval' in metrics:
             judge_acc = metrics['judge_eval'].get('accuracy', 'N/A')
             logger.info(f"  Judge Accuracy: {judge_acc}")
-    
     logger.info("Training log saved to training.log")
     logger.info("=== AML/KYC Enhanced Training Finished ===")
 

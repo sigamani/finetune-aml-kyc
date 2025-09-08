@@ -1,21 +1,7 @@
 #!/usr/bin/env python3
 """
-Programmatically generate synthetic AML/KYC curriculum data (easy/medium/hard),
-validate schema, dedupe, inject light noise, and write train/val JSONL.
-
-Providers: Anthropic (default Sonnet 3.5) or Perplexity.
-Caching + retries included.
-
-Usage:
-  python generate_synthetics.py \
-    --provider anthropic \
-    --out_dir ./data \
-    --per_tier 80 \
-    --seed 42
-
-Env:
-  ANTHROPIC_API_KEY, ANTHROPIC_MODEL (default: claude-3-5-sonnet-20240620)
-  PERPLEXITY_API_KEY, PPLX_MODEL (default: llama-3.1-70b-instruct)
+Generate synthetic AML/KYC curriculum data with AI providers.
+Supports Anthropic and Perplexity with caching and validation.
 """
 from __future__ import annotations
 import os, json, random, hashlib, re
@@ -29,7 +15,6 @@ from tqdm import tqdm
 
 load_dotenv()
 
-# ---------------- Schema ----------------
 class Record(BaseModel):
     instruction: str = Field(..., min_length=5)
     input: str = Field(..., min_length=10, max_length=1500)
@@ -38,7 +23,6 @@ class Record(BaseModel):
     difficulty: str = Field(..., pattern="^(easy|medium|hard)$")
     label: str = Field(..., pattern="^(match|no_match|edge)$")
 
-# ---------------- Providers ----------------
 class ProviderBase:
     def __init__(self, cache_dir: str):
         self.cache_dir = cache_dir
@@ -112,9 +96,32 @@ class PerplexityProvider(ProviderBase):
         self._put(prompt, text)
         return text
 
-# ---------------- Noise & Utils ----------------
+class OpenAIProvider(ProviderBase):
+    def __init__(self, cache_dir: str):
+        super().__init__(cache_dir)
+        try:
+            import openai
+        except Exception as e:
+            raise RuntimeError("Install openai to use OpenAI provider") from e
+        self.client = openai.OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+        self.model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
+
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential(min=2, max=20), reraise=True)
+    def complete(self, prompt: str) -> str:
+        cached = self._get(prompt)
+        if cached:
+            return cached
+        resp = self.client.chat.completions.create(
+            model=self.model,
+            temperature=0.7,
+            max_tokens=4000,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        text = resp.choices[0].message.content
+        self._put(prompt, text)
+        return text
+
 def light_noise(s: str) -> str:
-    """Injects minor OCR-ish noise in a safe way (rarely)."""
     if random.random() > 0.15:
         return s
     s = s.replace("0", "O") if random.random() < 0.5 else s
@@ -130,7 +137,6 @@ def iter_json_lines(text: str) -> List[Dict[str, Any]]:
             obj = json.loads(ln)
             out.append(obj)
         except Exception:
-            # Attempt to extract one JSON object per block
             m = re.search(r"\{.*\}", ln)
             if m:
                 try:
@@ -139,7 +145,6 @@ def iter_json_lines(text: str) -> List[Dict[str, Any]]:
                     continue
     return out
 
-# ---------------- Meta Prompt (VERBATIM) ----------------
 META_PROMPT = r"""
 You are creating supervised fine-tuning data for an AML/KYC screening model that must decide whether a candidate entity MATCHES a watchlist/PEP/sanctions entry and explain the reasoning.
 
@@ -161,11 +166,12 @@ Constraints:
 Generate N samples for DIFFICULTY="{tier}".
 """
 
-# ---------------- Main generation ----------------
 def main():
+    from dotenv import load_dotenv
+    load_dotenv()
     import argparse, pathlib, itertools
     parser = argparse.ArgumentParser()
-    parser.add_argument("--provider", choices=["anthropic", "perplexity"], default="anthropic")
+    parser.add_argument("--provider", choices=["anthropic", "perplexity", "openai"], default="openai")
     parser.add_argument("--out_dir", type=str, default="./data")
     parser.add_argument("--per_tier", type=int, default=80, help="Samples per tier (50-100 recommended)")
     parser.add_argument("--seed", type=int, default=42)
@@ -174,7 +180,12 @@ def main():
     random.seed(args.seed)
     os.makedirs(args.out_dir, exist_ok=True)
 
-    provider = AnthropicProvider("./.cache/generate") if args.provider == "anthropic" else PerplexityProvider("./.cache/generate")
+    if args.provider == "anthropic":
+        provider = AnthropicProvider("./.cache/generate")
+    elif args.provider == "perplexity":
+        provider = PerplexityProvider("./.cache/generate")
+    else:
+        provider = OpenAIProvider("./.cache/generate")
 
     all_records: List[Record] = []
     seen = set()
@@ -182,7 +193,6 @@ def main():
     for tier in ["easy", "medium", "hard"]:
         print(f"\n=== Generating {tier} tier ===")
         prompt = META_PROMPT.replace('{tier}', tier)
-        # Encourage diversity by multi-seeding and locale hints
         header = (
             f"Generate {args.per_tier} diverse samples.\n"
             "Vary locales/scripts (Latin, Cyrillic, Arabic, Chinese transliterations), "
@@ -192,8 +202,6 @@ def main():
         print(f"Requesting {args.per_tier} samples from {args.provider}...")
         text = provider.complete(header + prompt)
         objs = iter_json_lines(text)
-        
-        # Validate + de-dup + noise
         tier_records = []
         validation_errors = 0
         duplicates = 0
@@ -210,7 +218,6 @@ def main():
                 duplicates += 1
                 continue
             seen.add(key)
-            # light noise injection on input occasionally
             noisy = r.model_copy()
             noisy.input = light_noise(noisy.input)
             tier_records.append(noisy)
@@ -226,18 +233,16 @@ def main():
                 f.write(r.model_dump_json() + "\n")
         all_records.extend(tier_records)
 
-    # Combined train
     train_fp = os.path.join(args.out_dir, "train.jsonl")
     with open(train_fp, "w") as f:
         for r in all_records:
             f.write(r.model_dump_json() + "\n")
 
-    # Balanced validation set across difficulty & label
     by_bucket: Dict[tuple, List[Record]] = {}
     for r in all_records:
         by_bucket.setdefault((r.difficulty, r.label), []).append(r)
 
-    target_val = min(100, len(all_records) // 5)  # 20% for validation, max 100
+    target_val = min(100, len(all_records) // 5)
     buckets = list(by_bucket.items())
     per_bucket = max(1, target_val // max(1, len(buckets)))
     val = []
@@ -251,13 +256,10 @@ def main():
         for r in val:
             f.write(r.model_dump_json() + "\n")
 
-    # Print summary statistics
     print(f"\n=== Summary ===")
     print(f"Total records: {len(all_records)}")
     print(f"Training samples: {len(all_records)}")
     print(f"Validation samples: {len(val)}")
-    
-    # Distribution by difficulty
     difficulty_dist = {}
     label_dist = {}
     for r in all_records:

@@ -1,23 +1,7 @@
 #!/usr/bin/env python3
 """
-LLM-as-Judge evaluation (Anthropic Sonnet 3.5 or Perplexity).
-- Samples 100 items (stratified by label & difficulty) from a JSONL dataset.
-- Runs the fine-tuned model to produce answers.
-- Asks the Judge LLM to grade decision correctness, sufficiency, and hallucinations.
-- Emits accuracy, precision/recall/F1 (macro & per-class), and rubric mean.
-Caching + retries included.
-
-Usage:
-  python eval_judge.py \
-    --model_path ./outputs/llama33-8b-aml-curriculum/adapter \
-    --dataset ./data/val.jsonl \
-    --provider anthropic \
-    --tau 0.5 \
-    --out ./outputs/judge_reports/phase_easy.json
-
-Env:
-  ANTHROPIC_API_KEY, ANTHROPIC_MODEL (default: claude-3-5-sonnet-20240620)
-  PERPLEXITY_API_KEY, PPLX_MODEL (default: llama-3.1-70b-instruct)
+LLM-as-Judge evaluation for AML/KYC models.
+Supports Anthropic and Perplexity with caching and detailed metrics.
 """
 from __future__ import annotations
 import os, json, math, hashlib, random, re, time
@@ -38,7 +22,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# ----------------- Schema -----------------
 class Item(BaseModel):
     instruction: str
     input: str
@@ -47,7 +30,6 @@ class Item(BaseModel):
     difficulty: str
     label: str
 
-# ----------------- Judge adapters -----------------
 class JudgeBase:
     def __init__(self, cache_dir: str = "./.cache/judge"):
         self.cache_dir = cache_dir
@@ -89,14 +71,12 @@ class JudgeBase:
         )
 
     def parse_json(self, text: str) -> Dict[str, Any]:
-        # Try to extract JSON
         m = re.search(r"\{.*\}", text, re.DOTALL)
         if m:
             try:
                 return json.loads(m.group(0))
             except Exception:
                 pass
-        # Last resort
         return {"decision": "edge", "sufficiency": 0, "hallucination": False, "confidence": 0.5}
 
     def judge(self, prompt: str) -> Dict[str, Any]:
@@ -155,7 +135,6 @@ class PerplexityJudge(JudgeBase):
         self._cache_set(prompt, text)
         return self.parse_json(text)
 
-# ----------------- Model inference -----------------
 class InferenceModel:
     def __init__(self, model_path: str, max_new_tokens: int = 256, device: str | None = None):
         self.model_path = model_path
@@ -187,18 +166,15 @@ class InferenceModel:
             eos_token_id=self.tokenizer.eos_token_id,
         )
         text = self.tokenizer.decode(out[0], skip_special_tokens=True)
-        # Return only the assistant part after the last marker
         ans = text.split("### Assistant:")[-1].strip()
         return ans
 
-# ----------------- Sampling -----------------
 def stratified_sample(items: List[Item], n: int = 100) -> List[Item]:
     by_bucket = defaultdict(list)
     for it in items:
         key = (it.label, it.difficulty)
         by_bucket[key].append(it)
 
-    # allocate proportionally
     total = len(items)
     plan = {}
     remaining = n
@@ -220,9 +196,7 @@ def stratified_sample(items: List[Item], n: int = 100) -> List[Item]:
     random.shuffle(sampled)
     return sampled[:n]
 
-# ----------------- Metrics -----------------
 def compute_metrics(golds: List[str], preds: List[str], rubric_scores: List[float]) -> Dict[str, Any]:
-    # Normalize labels
     norm = lambda x: x.lower().strip()
     y_true = [norm(x) for x in golds]
     y_pred = [norm(x) for x in preds]
@@ -243,20 +217,18 @@ def compute_metrics(golds: List[str], preds: List[str], rubric_scores: List[floa
         "report": report,
     }
 
-# ----------------- Main -----------------
 def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_path", type=str, required=True)
     parser.add_argument("--dataset", type=str, required=True)
     parser.add_argument("--provider", type=str, choices=["anthropic", "perplexity"], default="anthropic")
-    parser.add_argument("--tau", type=float, default=0.5, help="Confidence threshold (used if provider returns it)")
+    parser.add_argument("--tau", type=float, default=0.5)
     parser.add_argument("--samples", type=int, default=100)
     parser.add_argument("--out", type=str, required=True)
     parser.add_argument("--max_new_tokens", type=int, default=256)
     args = parser.parse_args()
 
-    # Load items
     ds = load_dataset("json", data_files={"val": args.dataset})["val"]
     items = [Item(**{k: ds[i][k] for k in ["instruction", "input", "cot", "output", "difficulty", "label"]}) for i in range(len(ds))]
     pool = stratified_sample(items, n=args.samples)
@@ -270,14 +242,11 @@ def main():
         model_answer = infer.generate_answer(case)
         jprompt = judge.build_prompt(case, model_answer)
         jres = judge.judge(jprompt)
-        # Decide final predicted label
         pred = str(jres.get("decision", "edge")).lower().strip()
         conf = float(jres.get("confidence", 0.5))
-        # Optional thresholding; if confidence too low, bucket to 'edge'
         if conf < args.tau:
             pred = "edge"
 
-        # Rubric: score 0 if hallucination; else mean of (decision_correct {0,1}, sufficiency {0,0.5,1})
         decision_correct = 1.0 if pred == case.label.lower() else 0.0
         if bool(jres.get("hallucination", False)):
             rubric = 0.0

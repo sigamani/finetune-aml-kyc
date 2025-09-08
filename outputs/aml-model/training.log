@@ -1,0 +1,47 @@
+2025-09-08 07:46:24,337 - aml_kyc_trainer - INFO - === AML/KYC Enhanced Training Started ===
+2025-09-08 07:46:24,337 - aml_kyc_trainer - INFO - Training started at: 2025-09-08 07:46:24.337495
+2025-09-08 07:46:24,337 - aml_kyc_trainer - INFO - === Training Configuration ===
+2025-09-08 07:46:24,337 - aml_kyc_trainer - INFO -   model_id: unsloth/tinyllama-chat
+2025-09-08 07:46:24,337 - aml_kyc_trainer - INFO -   data_dir: ./data
+2025-09-08 07:46:24,337 - aml_kyc_trainer - INFO -   output_dir: ./outputs/aml-model
+2025-09-08 07:46:24,337 - aml_kyc_trainer - INFO -   max_seq_len: 1024
+2025-09-08 07:46:24,337 - aml_kyc_trainer - INFO -   epochs_easy: 2
+2025-09-08 07:46:24,337 - aml_kyc_trainer - INFO -   epochs_medium: 2
+2025-09-08 07:46:24,337 - aml_kyc_trainer - INFO -   epochs_hard: 1
+2025-09-08 07:46:24,337 - aml_kyc_trainer - INFO -   lr: 2e-05
+2025-09-08 07:46:24,337 - aml_kyc_trainer - INFO -   batch_size: 2
+2025-09-08 07:46:24,337 - aml_kyc_trainer - INFO -   grad_accum: 4
+2025-09-08 07:46:24,337 - aml_kyc_trainer - INFO -   use_cot: True
+2025-09-08 07:46:24,337 - aml_kyc_trainer - INFO -   judge_provider: anthropic
+2025-09-08 07:46:24,337 - aml_kyc_trainer - INFO -   run_judge: True
+2025-09-08 07:46:24,337 - aml_kyc_trainer - INFO -   seed: 42
+2025-09-08 07:46:24,338 - aml_kyc_trainer - INFO - Loading base model: unsloth/tinyllama-chat
+2025-09-08 07:46:36,901 - aml_kyc_trainer - INFO - Model loaded successfully in 12.56s
+2025-09-08 07:46:36,902 - aml_kyc_trainer - INFO - Applying LoRA configuration
+2025-09-08 07:46:40,307 - aml_kyc_trainer - INFO - LoRA applied successfully
+2025-09-08 07:46:40,307 - aml_kyc_trainer - INFO - 
+============================================================
+2025-09-08 07:46:40,307 - aml_kyc_trainer - INFO - Starting phase: EASY
+2025-09-08 07:46:40,307 - aml_kyc_trainer - INFO - ============================================================
+2025-09-08 07:46:40,307 - aml_kyc_trainer - ERROR - Training data not found at ./data/train.jsonl
+2025-09-08 07:46:40,307 - aml_kyc_trainer - INFO - 
+============================================================
+2025-09-08 07:46:40,308 - aml_kyc_trainer - INFO - Starting phase: MEDIUM
+2025-09-08 07:46:40,308 - aml_kyc_trainer - INFO - ============================================================
+2025-09-08 07:46:40,308 - aml_kyc_trainer - ERROR - Training data not found at ./data/train.jsonl
+2025-09-08 07:46:40,308 - aml_kyc_trainer - INFO - 
+============================================================
+2025-09-08 07:46:40,308 - aml_kyc_trainer - INFO - Starting phase: HARD
+2025-09-08 07:46:40,308 - aml_kyc_trainer - INFO - ============================================================
+2025-09-08 07:46:40,308 - aml_kyc_trainer - ERROR - Training data not found at ./data/train.jsonl
+2025-09-08 07:46:40,308 - aml_kyc_trainer - INFO - Training summary saved to ./outputs/aml-model/training_summary.json
+2025-09-08 07:46:40,308 - aml_kyc_trainer - INFO - 
+============================================================
+2025-09-08 07:46:40,308 - aml_kyc_trainer - INFO - TRAINING COMPLETED
+2025-09-08 07:46:40,308 - aml_kyc_trainer - INFO - ============================================================
+2025-09-08 07:46:40,308 - aml_kyc_trainer - INFO - Total training time: 0.00s (0.0 minutes)
+2025-09-08 07:46:40,308 - aml_kyc_trainer - INFO - Phases completed: []
+2025-09-08 07:46:40,309 - aml_kyc_trainer - INFO - Training summary: ./outputs/aml-model/training_summary.json
+2025-09-08 07:46:40,309 - aml_kyc_trainer - INFO - Integration example: ./outputs/aml-model/integration_snippet.py
+2025-09-08 07:46:40,309 - aml_kyc_trainer - INFO - Training log saved to training.log
+2025-09-08 07:46:40,309 - aml_kyc_trainer - INFO - === AML/KYC Enhanced Training Finished ===

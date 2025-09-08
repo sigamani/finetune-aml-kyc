@@ -1,24 +1,7 @@
 #!/usr/bin/env python3
 """
-Unsloth + Transformers + TRL curriculum learning trainer (easy → medium → hard).
-- Loads base model (Llama 3.3 8B Instruct default) and applies LoRA via Unsloth.
-- Expects JSONL with fields: instruction, input, output, cot, difficulty, label.
-- Trains CoT (cot + final answer) or only final answer (toggle).
-- Early-stops per phase if val loss improvement < 5% over 3 consecutive epochs.
-- After each phase, runs LLM-as-Judge on 100 stratified items (optional).
-- Saves LoRA adapters and optionally merges weights; optional HF Hub push.
-- Exports a short vLLM/Transformers loading snippet.
-
-Example:
-python train_unsloth_curriculum.py \
-  --model_id meta-llama/Llama-3.3-8B-Instruct \
-  --data_dir ./data \
-  --output_dir ./outputs/llama33-8b-aml-curriculum \
-  --max_seq_len 4096 \
-  --epochs_easy 2 --epochs_medium 2 --epochs_hard 1 \
-  --lr 1e-5 --batch_size 2 --grad_accum 16 \
-  --judge_provider anthropic --run_judge true \
-  --push_to_hub false --merge_lora false
+Unsloth curriculum trainer for AML/KYC (easy → medium → hard).
+Supports LoRA, early stopping, and optional LLM-as-Judge evaluation.
 """
 from __future__ import annotations
 import os, json, math, random, subprocess, shutil
@@ -40,7 +23,6 @@ from tqdm import tqdm
 
 load_dotenv()
 
-# ----------------- Config -----------------
 DEFAULT_MODEL = "meta-llama/Llama-3.3-8B-Instruct"
 TARGET_MODULES = ["q_proj","k_proj","v_proj","o_proj","gate_proj","up_proj","down_proj"]
 
@@ -50,7 +32,6 @@ SYSTEM_PROMPT = (
 )
 
 def format_example(ex: Dict[str, Any], use_cot: bool = True) -> str:
-    """Produce a single-turn instruction-tuning sample, where only the Assistant part is labeled."""
     user_block = (
         f"### Instruction:\n{ex['instruction']}\n\n"
         f"### Input:\n{ex['input']}\n\n"
@@ -63,9 +44,7 @@ def format_example(ex: Dict[str, Any], use_cot: bool = True) -> str:
 
 def build_packed_dataset(data_path: str, split_filter: str, use_cot: bool, seed: int = 42) -> DatasetDict:
     ds = load_dataset("json", data_files=data_path)["train"]
-    # Split by difficulty for curriculum
     ds_phase = ds.filter(lambda ex: ex.get("difficulty","").lower() == split_filter.lower())
-    # Train/val split
     ds_phase = ds_phase.train_test_split(test_size=min(0.1, max(0.1, 0.1)), seed=seed)
     def map_fmt(ex):
         ex["text"] = format_example(ex, use_cot=use_cot)
@@ -74,7 +53,6 @@ def build_packed_dataset(data_path: str, split_filter: str, use_cot: bool, seed:
     return DatasetDict({"train": ds_phase["train"], "validation": ds_phase["test"]})
 
 class PlateauEarlyStop:
-    """Stop if relative improvement < 5% over 3 consecutive epochs."""
     def __init__(self, patience_epochs: int = 3, min_rel_improve: float = 0.05):
         self.patience = patience_epochs
         self.min_rel = min_rel_improve
@@ -93,7 +71,6 @@ def train_phase(
     model, tokenizer, ds_phase: DatasetDict, args, phase_name: str, output_dir: str
 ) -> Dict[str, Any]:
     os.makedirs(output_dir, exist_ok=True)
-    # Data collator for language modeling
     collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer,
         mlm=False,
@@ -144,14 +121,11 @@ def train_phase(
             print(f"[{phase_name}] Early stop triggered.")
             break
 
-    # Save adapter checkpoint (SFTTrainer already saves; ensure last adapter present)
     trainer.save_model(output_dir)
     return {"history": history, "best_eval_loss": stopper.best}
 
 def merge_and_save(model, tokenizer, out_dir: str):
-    """Merge LoRA into base and save for plain Transformers/vLLM loading."""
     os.makedirs(out_dir, exist_ok=True)
-    # Unsloth provides fast merge helper
     FastLanguageModel.save_pretrained_merged(model, tokenizer, out_dir, max_shard_size="5GB")
     print(f"Merged weights saved to: {out_dir}")
 
@@ -188,8 +162,7 @@ def run_judge(
 def main():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_id", type=str, default=DEFAULT_MODEL,
-                        help="HF model id (e.g., meta-llama/Llama-3.3-8B-Instruct or mistralai/Mistral-7B-Instruct-v0.3)")
+    parser.add_argument("--model_id", type=str, default=DEFAULT_MODEL)
     parser.add_argument("--data_dir", type=str, default="./data")
     parser.add_argument("--train_file", type=str, default="train.jsonl")
     parser.add_argument("--val_file", type=str, default="val.jsonl")
@@ -208,13 +181,11 @@ def main():
     parser.add_argument("--judge_provider", type=str, choices=["anthropic", "perplexity"], default="anthropic")
     parser.add_argument("--run_judge", type=lambda x: str(x).lower() == "true", default=False)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--rope_scale", type=float, default=1.0, help="RoPE scaling factor (>1.0 to extend context if supported).")
+    parser.add_argument("--rope_scale", type=float, default=1.0)
     args = parser.parse_args()
 
     random.seed(args.seed)
     torch.manual_seed(args.seed)
-
-    # ---------------- Load model via Unsloth ----------------
     print(f"Loading base model: {args.model_id}")
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name=args.model_id,
@@ -222,19 +193,16 @@ def main():
         load_in_4bit=True,
         dtype=None,
     )
-    # Special tokens (simple instruction format)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     tokenizer.truncation_side = "left"
 
-    # Apply LoRA
     model = FastLanguageModel.get_peft_model(
         model,
         r=16, lora_alpha=32, lora_dropout=0.05,
         target_modules=TARGET_MODULES,
     )
 
-    # Optional: RoPE scaling if the config supports it
     try:
         if hasattr(model.config, "rope_scaling") and args.rope_scale and args.rope_scale != 1.0:
             model.config.rope_scaling = {"type": "linear", "factor": args.rope_scale}
@@ -242,7 +210,6 @@ def main():
     except Exception:
         pass
 
-    # ---------------- Curriculum loops ----------------
     phases = ["easy", "medium", "hard"]
     full_train_path = os.path.join(args.data_dir, args.train_file)
     full_val_path = os.path.join(args.data_dir, args.val_file)
@@ -261,34 +228,28 @@ def main():
         metrics = train_phase(model, tokenizer, ds_phase, args, phase_name=phase, output_dir=phase_out)
         results[phase] = metrics
 
-        # Judge after each phase (optional)
         if args.run_judge:
             judge_out = os.path.join(args.output_dir, "judge_reports", f"phase_{phase}.json")
-            # Use current adapter dir for inference
-            run_judge(phase_out, full_val_path, provider=args.judge_provider, out_report=judge_out)
+                run_judge(phase_out, full_val_path, provider=args.judge_provider, out_report=judge_out)
 
     with open(os.path.join(args.output_dir, "curriculum_results.json"), "w") as f:
         json.dump(results, f, indent=2)
 
-    # Save final adapter
     final_adapter = os.path.join(args.output_dir, "adapter")
     if not os.path.exists(final_adapter):
         shutil.copytree(os.path.join(args.output_dir, "phase_hard"), final_adapter, dirs_exist_ok=True)
     print(f"Saved final LoRA adapter at: {final_adapter}")
 
-    # Optional: merge LoRA
     if args.merge_lora:
         merged_dir = os.path.join(args.output_dir, "merged")
         merge_and_save(model, tokenizer, merged_dir)
 
-    # Optional: push to hub
     if args.push_to_hub:
         push_to_hub_if_needed(
             out_dir=os.path.join(args.output_dir, "merged" if args.merge_lora else "adapter"),
             repo_id=args.hub_repo,
         )
 
-    # Emit integration snippet
     snippet = f"""
 # Transformers inference (merged or adapter)
 from transformers import AutoTokenizer, AutoModelForCausalLM
